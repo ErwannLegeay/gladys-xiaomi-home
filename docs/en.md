@@ -76,6 +76,10 @@ with the local network as the fallback.
 
 - **Robot vacuums only.** The name matches the app, but a Xiaomi Home account
   carries many other device types and none of them is handled here.
+- Among the robots Xiaomi builds itself (MIoT protocol), only the **Xiaomi
+  Robot Vacuum S20+** is supported so far: state, battery, suction, brushes,
+  filter and the start / pause / stop / dock commands. Room cleaning, the map
+  and the last cleaning are not available on it.
 - Suction-level codes vary across model generations. If your model behaves
   differently, open an issue with the `fan_power` value visible in the debug
   logs.

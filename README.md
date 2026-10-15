@@ -174,7 +174,13 @@ exercises the silent `passToken` login, discovery, polling and commands.
 
 - **Robot vacuums only.** The name matches the app, but a Xiaomi Home account
   carries many other device types and none of them is handled here.
-- Only the miIO protocol family is implemented.
+- Only the miIO protocol family is implemented. The robots Xiaomi builds
+  itself speak MIoT instead (properties and actions) and only answer when their
+  model has a profile in `src/xiaomi/miot.js`: today the **Xiaomi Robot Vacuum
+  S20+** (`xiaomi.vacuum.b108gl`). They report state, battery, suction, brushes
+  and filter, and take start / pause / stop / dock / suction commands; room
+  cleaning, the map and the cleaning history are Roborock-only. Another model
+  needs its own profile, read from its spec on https://home.miot-spec.com.
 - **No routines.** The sibling Roborock integration exposes the account routines
   as buttons, but those are Roborock cloud scenes; a Mi Home scene is a different
   API entirely and is not implemented here. Everything else the robot itself

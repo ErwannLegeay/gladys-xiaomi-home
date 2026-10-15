@@ -85,6 +85,11 @@ le cloud Xiaomi, avec le réseau local en repli.
 - **Aspirateurs robots uniquement.** Le nom reprend celui de l'application, mais
   un compte Xiaomi Home porte bien d'autres types d'appareils, dont aucun n'est
   géré ici.
+- Parmi les robots fabriqués par Xiaomi lui-même (protocole MIoT), seul le
+  **Xiaomi Robot Vacuum S20+** est pris en charge pour l'instant : état,
+  batterie, aspiration, brosses, filtre et les commandes démarrer / pause /
+  arrêt / retour base. Le nettoyage par pièce, la carte et le dernier nettoyage
+  n'y sont pas disponibles.
 - Les codes de puissance d'aspiration varient selon les générations de modèles.
   Si votre modèle se comporte différemment, ouvrez une issue avec la valeur
   `fan_power` visible dans les journaux de débogage.
