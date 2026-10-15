@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { CONSUMABLE_LIFETIME, ROBOROCK_METHOD } from '../src/constants.js';
 import { buildConsumableStates, buildPollStates } from '../src/devices/vacuum.js';
 import { fakeVacuumIds } from './helpers/fakeGladys.js';
+import { buildMapWidgetContent } from '../src/devices/mapWidget.js';
 import {
   MIOT_VACUUM_PROFILES,
   assertMiotSuccess,
@@ -195,4 +196,24 @@ test('a MIoT robot has no cleaning history and no map', async () => {
   assert.equal(await client.getCleanSummary(DID), null);
   await assert.rejects(client.getMap(DID), /not supported/);
   assert.deepEqual(sent, []);
+});
+
+test('a MIoT robot has no map, a Roborock one has', () => {
+  const { client } = miotClient();
+  client.devices.push({ duid: '42', name: 'S5', model: 'roborock.vacuum.s5', rooms: [] });
+  assert.equal(client.supportsMap(DID), false);
+  assert.equal(client.supportsMap('42'), true);
+});
+
+test('the widget of a robot without a map keeps its tiles, status and buttons', () => {
+  const content = buildMapWidgetContent(null, {
+    imageKey: null,
+    vacuumExternalId: 'ext:test:vacuum:1068496858',
+    status: statusFromProperties(PROFILE, STATUS_ANSWER),
+    consumables: { mainBrush: 90, sideBrush: 50, filter: 0, sensor: null },
+  });
+  const types = content.components.map((component) => component.type);
+  assert.equal(types.includes('image'), false);
+  assert.deepEqual(types, ['value', 'gauge', 'status', 'button', 'button']);
+  assert.equal(content.components[1].value, 32); // cleaned surface, m²
 });

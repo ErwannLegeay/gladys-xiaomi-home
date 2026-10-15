@@ -320,11 +320,11 @@ export class XiaomiClient {
    *   segment with its room name when the account knows it
    */
   async getMap(duid, { includePixels = false } = {}) {
+    if (!this.supportsMap(duid)) {
+      throw new Error(`The map of robot ${duid} is not supported (MIoT robot)`);
+    }
     if (!this.cloud) {
       throw new Error('The map is stored in the Xiaomi cloud, which is not connected');
-    }
-    if (this.#miotProfileOf(duid)) {
-      throw new Error(`The map of robot ${duid} is not supported (MIoT robot)`);
     }
     const mapName = await this.#getMapName(duid);
     const url = await this.cloud.getMapFileUrl(mapName);
@@ -336,6 +336,15 @@ export class XiaomiClient {
     map.segments = attachRoomNames(map.segments, robot ? robot.rooms : []);
     map.namedSegmentCount = map.segments.filter((segment) => segment.named).length;
     return map;
+  }
+
+  /**
+   * Whether a robot uploads a map: only the Roborock-built ones do.
+   * @param {string} duid the device id
+   * @returns {boolean} false for a MIoT robot
+   */
+  supportsMap(duid) {
+    return !this.#miotProfileOf(duid);
   }
 
   async #getMapName(duid) {
