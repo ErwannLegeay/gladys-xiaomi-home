@@ -49,8 +49,9 @@ deux boutons que vous choisissez dans ses paramètres. Pendant un nettoyage, la
 carte se met à jour environ toutes les 15 secondes.
 
 La carte passe par le **cloud Xiaomi**, même quand le robot répond sur votre
-réseau local, et seuls les robots fabriqués par Roborock (S5, S6, S7…) la
-fournissent.
+réseau local. Les robots fabriqués par Roborock (S5, S6, S7…) la fournissent,
+ainsi que le Xiaomi Robot Vacuum S20+ ; sur le S20+, les pièces sont dessinées
+mais ne peuvent pas être nettoyées une à une.
 
 ## Configuration
 
@@ -87,8 +88,8 @@ le cloud Xiaomi, avec le réseau local en repli.
   géré ici.
 - Parmi les robots fabriqués par Xiaomi lui-même (protocole MIoT), seul le
   **Xiaomi Robot Vacuum S20+** est pris en charge pour l'instant : état,
-  batterie, aspiration, brosses, filtre et les commandes démarrer / pause /
-  arrêt / retour base. Le nettoyage par pièce, la carte et le dernier nettoyage
+  batterie, aspiration, brosses, filtre, carte et les commandes démarrer /
+  pause / arrêt / retour base. Le nettoyage par pièce et le dernier nettoyage
   n'y sont pas disponibles.
 - Les codes de puissance d'aspiration varient selon les générations de modèles.
   Si votre modèle se comporte différemment, ouvrez une issue avec la valeur

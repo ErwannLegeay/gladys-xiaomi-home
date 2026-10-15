@@ -21,6 +21,7 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 
 import { ROBOROCK_METHOD, XIAOMI_REGIONS } from '../constants.js';
 import { parseRRMap } from '../map/mapParser.js';
+import { decryptJsonMap, mapObjectName, parseJsonMap } from '../map/xiaomiJsonMap.js';
 import { MiCloudClient } from './miCloud.js';
 import { MiioLocalTransport } from './miioLocalTransport.js';
 import {
@@ -323,6 +324,10 @@ export class XiaomiClient {
     if (!this.supportsMap(duid)) {
       throw new Error(`The map of robot ${duid} is not supported (MIoT robot)`);
     }
+    const profile = this.#miotProfileOf(duid);
+    if (profile) {
+      return this.#getJsonMap(duid, profile, { includePixels });
+    }
     if (!this.cloud) {
       throw new Error('The map is stored in the Xiaomi cloud, which is not connected');
     }
@@ -344,7 +349,33 @@ export class XiaomiClient {
    * @returns {boolean} false for a MIoT robot
    */
   supportsMap(duid) {
-    return !this.#miotProfileOf(duid);
+    const profile = this.#miotProfileOf(duid);
+    return !profile || Boolean(profile.map);
+  }
+
+  /**
+   * Fetch, decrypt and parse the map of a MIoT robot that uploads it as a JSON
+   * map (see map/xiaomiJsonMap.js): its `map-obj-name` property names the file.
+   * @param {string} duid the device id
+   * @param {object} profile the MIoT profile
+   * @param {object} options options
+   * @param {boolean} options.includePixels keep the pixel grid, for rendering
+   * @returns {Promise<object>} the parsed map
+   */
+  async #getJsonMap(duid, profile, { includePixels }) {
+    const robot = this.devices.find((device) => device.duid === duid);
+    const { siid, piid } = profile.map.objectName;
+    const results = await this.#execute(duid, 'get_properties', [{ did: duid, siid, piid }]);
+    const answer = Array.isArray(results) ? results[0] : null;
+    const objectName = mapObjectName(answer && answer.value);
+    if (!objectName) {
+      throw new Error(`Robot ${duid} names no map file (property ${siid}.${piid})`);
+    }
+    const url = await this.cloud.getInterimFileUrl(objectName);
+    const file = await this.cloud.downloadMapFile(url);
+    const map = parseJsonMap(decryptJsonMap(file, robot.model, duid), { includePixels });
+    map.namedSegmentCount = map.segments.filter((segment) => segment.roomName).length;
+    return map;
   }
 
   async #getMapName(duid) {

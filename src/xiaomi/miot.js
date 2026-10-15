@@ -29,7 +29,9 @@ import { CONSUMABLE_LIFETIME, ROBOROCK_METHOD } from '../constants.js';
  * - `fanPowers`: MIoT suction level value -> Roborock fan power;
  * - `consumables`: the (siid, piid) of the remaining-life percentages, by
  *   get_consumable field;
- * - `actions`: Roborock method -> the (siid, aiid) of the MIoT action.
+ * - `actions`: Roborock method -> the (siid, aiid) of the MIoT action;
+ * - `map`: when the robot uploads its map (see map/xiaomiJsonMap.js), the
+ *   (siid, piid) of the property naming the map file.
  */
 export const MIOT_VACUUM_PROFILES = {
   // Xiaomi Robot Vacuum S20+ — https://home.miot-spec.com/spec/xiaomi.vacuum.b108gl
@@ -75,6 +77,8 @@ export const MIOT_VACUUM_PROFILES = {
       [ROBOROCK_METHOD.APP_PAUSE]: { siid: 2, aiid: 6 },
       [ROBOROCK_METHOD.APP_CHARGE]: { siid: 3, aiid: 1 },
     },
+    // map-obj-name: {"index":…,"obj_name":"<user id>/<did>/<n>"}
+    map: { objectName: { siid: 7, piid: 1 } },
   },
 };
 

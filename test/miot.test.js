@@ -191,18 +191,26 @@ test('a command without MIoT equivalent is refused before reaching the robot', a
   assert.deepEqual(sent, []);
 });
 
-test('a MIoT robot has no cleaning history and no map', async () => {
+test('a MIoT robot has no cleaning history', async () => {
   const { client, sent } = miotClient();
   assert.equal(await client.getCleanSummary(DID), null);
-  await assert.rejects(client.getMap(DID), /not supported/);
   assert.deepEqual(sent, []);
 });
 
-test('a MIoT robot has no map, a Roborock one has', () => {
+test('a MIoT robot has a map only when its profile says how to fetch it', () => {
   const { client } = miotClient();
-  client.devices.push({ duid: '42', name: 'S5', model: 'roborock.vacuum.s5', rooms: [] });
-  assert.equal(client.supportsMap(DID), false);
-  assert.equal(client.supportsMap('42'), true);
+  client.devices.push(
+    { duid: '42', name: 'S5', model: 'roborock.vacuum.s5', rooms: [] },
+    { duid: '43', name: 'Other', model: 'xiaomi.vacuum.test', rooms: [] },
+  );
+  MIOT_VACUUM_PROFILES['xiaomi.vacuum.test'] = { ...PROFILE, map: undefined };
+  try {
+    assert.equal(client.supportsMap(DID), true);
+    assert.equal(client.supportsMap('42'), true);
+    assert.equal(client.supportsMap('43'), false);
+  } finally {
+    delete MIOT_VACUUM_PROFILES['xiaomi.vacuum.test'];
+  }
 });
 
 test('the widget of a robot without a map keeps its tiles, status and buttons', () => {
