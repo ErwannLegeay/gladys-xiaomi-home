@@ -88,16 +88,17 @@ test('the JSON map becomes the structure the renderer reads', () => {
   const map = parseJsonMap(PAYLOAD, { includePixels: true });
   assert.equal(map.pixelSizeMm, 50);
   assert.deepEqual(
-    map.segments.map(({ segmentId, pixelCount, roomName, named }) => ({
+    map.segments.map(({ segmentId, pixelCount, roomId, roomName, named }) => ({
       segmentId,
       pixelCount,
+      roomId,
       roomName,
       named,
     })),
     [
-      { segmentId: 1, pixelCount: 1, roomName: null, named: false }, // floor, no room
-      { segmentId: 3, pixelCount: 3, roomName: 'Salon', named: true },
-      { segmentId: 4, pixelCount: 4, roomName: 'Cuisine', named: true }, // via room_id 12
+      { segmentId: 1, pixelCount: 1, roomId: 1, roomName: null, named: false }, // floor, no room
+      { segmentId: 3, pixelCount: 3, roomId: 3, roomName: 'Salon', named: true },
+      { segmentId: 4, pixelCount: 4, roomId: 12, roomName: 'Cuisine', named: true }, // via room_id 12
     ],
   );
   assert.equal(map.image.left, -2);

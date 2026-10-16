@@ -234,8 +234,23 @@ export class XiaomiClient {
 
     await Promise.all(
       this.devices.map(async (device) => {
-        if (miotProfile(device.model)) {
-          return; // MIoT robots expose no Roborock room mapping
+        const profile = miotProfile(device.model);
+        if (profile) {
+          // A MIoT robot names its rooms in its map, along with the ids it cleans.
+          if (profile.roomClean && profile.map) {
+            try {
+              const map = await this.#getJsonMap(device.duid, profile, { includePixels: false });
+              device.rooms = map.segments
+                .filter((segment) => segment.named)
+                .map((segment) => ({
+                  id: segment.roomId,
+                  name: segment.roomName || `Room ${segment.roomId}`,
+                }));
+            } catch (e) {
+              logger.warn(`Could not load the rooms of ${device.duid}: ${e.message}`);
+            }
+          }
+          return;
         }
         try {
           const mapping = await this.#execute(device.duid, ROBOROCK_METHOD.GET_ROOM_MAPPING, []);

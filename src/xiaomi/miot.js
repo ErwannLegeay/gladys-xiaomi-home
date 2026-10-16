@@ -21,6 +21,8 @@ import { CONSUMABLE_LIFETIME, ROBOROCK_METHOD } from '../constants.js';
 
 // Roborock state code of an error: a MIoT fault is reported as this state.
 const ROBOROCK_ERROR_STATE = 12;
+// Roborock state code of a room (segment) cleaning.
+const ROBOROCK_SEGMENT_CLEANING_STATE = 18;
 
 /**
  * The MIoT profiles, by model.
@@ -29,6 +31,8 @@ const ROBOROCK_ERROR_STATE = 12;
  * - `areaUnitMm2`: the size, in mm², of one unit of the cleaned area (the spec
  *   does not say it: it is read on the robot against the app);
  * - `states`: MIoT status value -> Roborock state code;
+ * - `segmentCleaning` (optional): the MIoT status and sweep type of a room
+ *   cleaning, reported as the Roborock segment_cleaning state;
  * - `errors` (optional): MIoT fault code -> label, once the codes of the model
  *   are known; a fault without a label is reported as `Erreur <code>`;
  * - `fanPowers`: MIoT suction level value -> Roborock fan power;
@@ -36,7 +40,9 @@ const ROBOROCK_ERROR_STATE = 12;
  *   get_consumable field;
  * - `actions`: Roborock method -> the (siid, aiid) of the MIoT action;
  * - `map`: when the robot uploads its map (see map/xiaomiJsonMap.js), the
- *   (siid, piid) of the property naming the map file.
+ *   (siid, piid) of the property naming the map file;
+ * - `roomClean` (optional): the (siid, aiid) of the action cleaning the rooms
+ *   given as a comma-separated string of the map room ids.
  */
 export const MIOT_VACUUM_PROFILES = {
   // Xiaomi Robot Vacuum S20+ — https://home.miot-spec.com/spec/xiaomi.vacuum.b108gl
@@ -47,6 +53,7 @@ export const MIOT_VACUUM_PROFILES = {
       clean_area: { siid: 2, piid: 5 },
       clean_time: { siid: 2, piid: 6 }, // seconds
       fan_power: { siid: 2, piid: 8 },
+      sweep_type: { siid: 2, piid: 4 },
       battery: { siid: 3, piid: 1 },
     },
     // Hundredths of m²: the robot reports 2500 where the app shows 25 m².
@@ -63,6 +70,8 @@ export const MIOT_VACUUM_PROFILES = {
       9: 29, // Mapping -> mapping
       10: 14, // Updating -> updating
     },
+    // Sweeping (4) with the SelectRoom sweep type (8): a room cleaning.
+    segmentCleaning: { status: 4, sweepType: 8 },
     fanPowers: {
       1: 101, // Silent -> quiet
       2: 102, // Basic -> balanced
@@ -84,6 +93,8 @@ export const MIOT_VACUUM_PROFILES = {
     },
     // map-obj-name: {"index":…,"obj_name":"<user id>/<did>/<n>"}
     map: { objectName: { siid: 7, piid: 1 } },
+    // start-vacuum-room-sweep, its single input being vacuum-room-ids (2.13).
+    roomClean: { siid: 2, aiid: 13 },
   },
 };
 
@@ -139,6 +150,10 @@ export function statusFromProperties(profile, results) {
     const state = profile.states[values.state];
     // An unknown MIoT status is reported as unknown, never as another state.
     status.state = state === undefined ? 0 : state;
+    const segment = profile.segmentCleaning;
+    if (segment && values.state === segment.status && values.sweep_type === segment.sweepType) {
+      status.state = ROBOROCK_SEGMENT_CLEANING_STATE;
+    }
   }
   if (values.error_code !== undefined) {
     status.error_code = values.error_code;
@@ -198,6 +213,19 @@ export function commandToMiot(profile, did, method, params = []) {
   const action = profile.actions[method];
   if (action) {
     return { method: 'action', params: { did, siid: action.siid, aiid: action.aiid, in: [] } };
+  }
+  if (method === ROBOROCK_METHOD.APP_SEGMENT_CLEAN && profile.roomClean) {
+    const request = Array.isArray(params) ? params[0] : params;
+    const segments = (request && Array.isArray(request.segments) ? request.segments : []).map(
+      Number,
+    );
+    // Never an empty or malformed list: the robot reads no room ids as "clean
+    // everything". The ids go as a string: an integer is read as no ids too.
+    if (segments.length === 0 || !segments.every((id) => Number.isSafeInteger(id) && id >= 0)) {
+      return null;
+    }
+    const { siid, aiid } = profile.roomClean;
+    return { method: 'action', params: { did, siid, aiid, in: [segments.join(',')] } };
   }
   if (method === ROBOROCK_METHOD.SET_FAN_POWER) {
     const fanPower = Number(Array.isArray(params) ? params[0] : params);

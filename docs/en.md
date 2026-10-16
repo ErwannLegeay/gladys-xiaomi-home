@@ -45,8 +45,7 @@ its settings. While the robot cleans, the map refreshes about every 15 seconds.
 
 The map is fetched through the **Xiaomi cloud**, even when the robot answers on
 your local network. The robots built by Roborock (S5, S6, S7…) provide it, and
-so does the Xiaomi Robot Vacuum S20+; on the S20+ the rooms are drawn but
-cannot be cleaned one by one.
+so does the Xiaomi Robot Vacuum S20+.
 
 ## Configuration
 
@@ -80,8 +79,8 @@ with the local network as the fallback.
   carries many other device types and none of them is handled here.
 - Among the robots Xiaomi builds itself (MIoT protocol), only the **Xiaomi
   Robot Vacuum S20+** is supported so far: state, battery, suction, brushes,
-  filter, the map and the start / pause / stop / dock commands. Room cleaning
-  and the last cleaning are not available on it.
+  filter, the map, room cleaning and the start / pause / stop / dock commands.
+  The last cleaning is not available on it.
 - Suction-level codes vary across model generations. If your model behaves
   differently, open an issue with the `fan_power` value visible in the debug
   logs.

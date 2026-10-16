@@ -183,8 +183,8 @@ exercises the silent `passToken` login, discovery, polling and commands.
   model has a profile in `src/xiaomi/miot.js`: today the **Xiaomi Robot Vacuum
   S20+** (`xiaomi.vacuum.b108gl`). They report state, battery, suction, brushes
   and filter, upload a JSON map (see above), and take start / pause / stop /
-  dock / suction commands; room cleaning and the cleaning history are
-  Roborock-only. Another model
+  dock / suction / room cleaning commands (their rooms and room ids come from
+  that map); the cleaning history is Roborock-only. Another model
   needs its own profile, read from its spec on https://home.miot-spec.com.
 - **No routines.** The sibling Roborock integration exposes the account routines
   as buttons, but those are Roborock cloud scenes; a Mi Home scene is a different

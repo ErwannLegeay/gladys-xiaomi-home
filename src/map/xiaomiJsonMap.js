@@ -121,17 +121,21 @@ function yawToDegrees(yaw) {
 }
 
 /**
- * The room name of each grid id. `room_attrs` may key a room by its grid id or
- * by its room id, which `map_room_info` translates.
+ * The rooms of a JSON map, by grid id: the grid id is what the cells carry,
+ * the room id what the robot expects to clean a room (`map_room_info` pairs
+ * them; without it, they are the same), and `room_attrs` names them, keyed by
+ * either id.
  * @param {object} payload the JSON map
- * @returns {Map<number, string>} grid id -> name
+ * @returns {{ names: Map<number, string>, roomIds: Map<number, number> }} by grid id
  */
-function roomNamesByGridId(payload) {
+function roomsByGridId(payload) {
+  const roomIds = new Map();
   const gridByRoomId = new Map();
   for (const entry of Array.isArray(payload.map_room_info) ? payload.map_room_info : []) {
     const gridId = Number(entry && entry.grid_id);
     const roomId = Number(entry && entry.room_id);
     if (Number.isInteger(gridId) && Number.isInteger(roomId)) {
+      roomIds.set(gridId, roomId);
       gridByRoomId.set(roomId, gridId);
     }
   }
@@ -149,7 +153,7 @@ function roomNamesByGridId(payload) {
       names.set(gridId, String(name));
     }
   }
-  return names;
+  return { names, roomIds };
 }
 
 /**
@@ -193,12 +197,13 @@ export function parseJsonMap(payload, { includePixels = false } = {}) {
     entry.maxY = Math.max(entry.maxY, y);
   }
 
-  const names = roomNamesByGridId(payload);
+  const { names, roomIds } = roomsByGridId(payload);
   const segments = [...stats.entries()]
     .map(([segmentId, s]) => ({
       segmentId,
       pixelCount: s.pixelCount,
       bbox: { minX: s.minX, minY: s.minY, maxX: s.maxX, maxY: s.maxY },
+      roomId: roomIds.get(segmentId) ?? segmentId,
       roomName: names.get(segmentId) || null,
       // Like the Roborock maps: the floor of no room is neither drawn nor counted.
       named: segmentId !== FLOOR_SEGMENT_ID,

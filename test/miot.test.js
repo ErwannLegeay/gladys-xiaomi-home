@@ -56,6 +56,7 @@ test('get_properties asks for every property of the profile', () => {
     { did: DID, siid: 2, piid: 5 },
     { did: DID, siid: 2, piid: 6 },
     { did: DID, siid: 2, piid: 8 },
+    { did: DID, siid: 2, piid: 4 },
     { did: DID, siid: 3, piid: 1 },
   ]);
 });
@@ -162,6 +163,33 @@ test('the fan power becomes the MIoT suction level', () => {
   assert.equal(commandToMiot(PROFILE, DID, ROBOROCK_METHOD.APP_SEGMENT_CLEAN, [{}]), null);
 });
 
+test('a room cleaning becomes start-vacuum-room-sweep, the room ids as a string', () => {
+  assert.deepEqual(
+    commandToMiot(PROFILE, DID, ROBOROCK_METHOD.APP_SEGMENT_CLEAN, [{ segments: [12, 3] }]),
+    { method: 'action', params: { did: DID, siid: 2, aiid: 13, in: ['12,3'] } },
+  );
+  // No room or a malformed id would read as "clean everything": refused.
+  for (const segments of [[], ['salon'], [-1], [1.5]]) {
+    assert.equal(
+      commandToMiot(PROFILE, DID, ROBOROCK_METHOD.APP_SEGMENT_CLEAN, [{ segments }]),
+      null,
+    );
+  }
+  // A profile without roomClean refuses it too.
+  assert.equal(
+    commandToMiot({ ...PROFILE, roomClean: undefined }, DID, ROBOROCK_METHOD.APP_SEGMENT_CLEAN, [
+      { segments: [12] },
+    ]),
+    null,
+  );
+});
+
+test('sweeping with the SelectRoom sweep type is a segment cleaning', () => {
+  assert.equal(statusFromProperties(PROFILE, [prop(2, 1, 4), prop(2, 4, 8)]).state, 18);
+  assert.equal(statusFromProperties(PROFILE, [prop(2, 1, 4), prop(2, 4, 1)]).state, 5);
+  assert.equal(statusFromProperties(PROFILE, [prop(2, 1, 1), prop(2, 4, 8)]).state, 3);
+});
+
 test('a refused MIoT command throws', () => {
   assert.doesNotThrow(() => assertMiotSuccess({ code: 0 }, 'action'));
   assert.doesNotThrow(() => assertMiotSuccess([{ code: 0 }], 'set_properties'));
@@ -216,10 +244,7 @@ test('a MIoT robot receives the MIoT action of a Roborock command', async () => 
 
 test('a command without MIoT equivalent is refused before reaching the robot', async () => {
   const { client, sent } = miotClient();
-  await assert.rejects(
-    client.sendCommand(DID, ROBOROCK_METHOD.APP_SEGMENT_CLEAN, [{ segments: [1] }]),
-    /not supported/,
-  );
+  await assert.rejects(client.sendCommand(DID, ROBOROCK_METHOD.GET_MAP_V1, []), /not supported/);
   assert.deepEqual(sent, []);
 });
 
