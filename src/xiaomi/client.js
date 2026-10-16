@@ -322,7 +322,7 @@ export class XiaomiClient {
    */
   async getMap(duid, { includePixels = false } = {}) {
     if (!this.supportsMap(duid)) {
-      throw new Error(`The map of robot ${duid} is not supported (MIoT robot)`);
+      throw new Error(`The map of robot ${duid} is not supported (no map in its MIoT profile)`);
     }
     const profile = this.#miotProfileOf(duid);
     if (profile) {
@@ -344,9 +344,10 @@ export class XiaomiClient {
   }
 
   /**
-   * Whether a robot uploads a map: only the Roborock-built ones do.
+   * Whether a robot uploads a map: the Roborock-built ones, and the MIoT ones
+   * whose profile has a `map`.
    * @param {string} duid the device id
-   * @returns {boolean} false for a MIoT robot
+   * @returns {boolean} false for a MIoT robot whose profile has no `map`
    */
   supportsMap(duid) {
     const profile = this.#miotProfileOf(duid);

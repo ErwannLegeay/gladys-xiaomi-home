@@ -10,6 +10,11 @@ import { buildConsumableStates, buildPollStates } from '../src/devices/vacuum.js
 import { fakeVacuumIds } from './helpers/fakeGladys.js';
 import { buildMapWidgetContent } from '../src/devices/mapWidget.js';
 import {
+  SCENE_TRIGGERS,
+  computeSceneEvents,
+  snapshotFromStatus,
+} from '../src/devices/sceneTriggers.js';
+import {
   MIOT_VACUUM_PROFILES,
   assertMiotSuccess,
   commandToMiot,
@@ -73,6 +78,33 @@ test('every MIoT status of the S20+ maps to a Roborock state', () => {
   }
   // an unknown status is reported as unknown
   assert.equal(statusFromProperties(PROFILE, [prop(2, 1, 42)]).state, 0);
+});
+
+test('a MIoT fault is an error state, labelled without the Roborock table', () => {
+  const status = statusFromProperties(PROFILE, [prop(2, 1, 1), prop(2, 2, 2)]);
+  // Roborock code 2 would read "Pare-chocs bloqué": not what an S20+ fault 2 means.
+  assert.deepEqual(status, { state: 12, error_code: 2, error_label: 'Erreur 2' });
+
+  const labelled = { ...PROFILE, errors: { 2: 'Roue bloquée' } };
+  assert.equal(statusFromProperties(labelled, [prop(2, 2, 2)]).error_label, 'Roue bloquée');
+
+  // No fault: the MIoT status stands.
+  assert.deepEqual(statusFromProperties(PROFILE, [prop(2, 1, 1), prop(2, 2, 0)]), {
+    state: 3,
+    error_code: 0,
+  });
+});
+
+test('a MIoT fault fires the error scene trigger with its own label', () => {
+  const before = snapshotFromStatus(statusFromProperties(PROFILE, [prop(2, 1, 1), prop(2, 2, 0)]));
+  const after = snapshotFromStatus(statusFromProperties(PROFILE, [prop(2, 1, 1), prop(2, 2, 2)]));
+  const events = computeSceneEvents(before, after, {
+    vacuum: 'ext:test:vacuum:1',
+    deviceName: 'S20+',
+  });
+  const error = events.find((event) => event.key === SCENE_TRIGGERS.ROBOT_ERROR);
+  assert.equal(error.data.error_code, 2);
+  assert.equal(error.data.error_label, 'Erreur 2');
 });
 
 test('the properties the robot refuses are left out', () => {

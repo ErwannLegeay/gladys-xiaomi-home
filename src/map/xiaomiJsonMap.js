@@ -29,8 +29,8 @@ const CELL_ROOM_MAX = 63;
 // RRMap pixel encoding the renderer reads: low 3 bits = type, the rest = segment.
 const RR_WALL = 1;
 const RR_FLOOR = 7;
-// Floor that belongs to no room is drawn as one more segment, with no label.
-// Room grid ids start at 3, so 1 is free.
+// Floor that belongs to no room gets a segment of its own, left unnamed like
+// the unsegmented floor of a Roborock map. Room grid ids start at 3, so 1 is free.
 const FLOOR_SEGMENT_ID = 1;
 
 /**
@@ -155,7 +155,7 @@ function roomNamesByGridId(payload) {
 /**
  * Parse a JSON map into the structure parseRRMap() yields (see mapParser.js):
  * coordinates in millimetres, a pixel grid of `pixelSizeMm`. Every room is
- * flagged `named`, since the robot names them itself.
+ * flagged `named` (the robot names them itself), the floor of no room is not.
  * @param {object} payload the JSON map (see decryptJsonMap)
  * @param {object} [options] options
  * @param {boolean} [options.includePixels] keep the pixel grid, for rendering
@@ -200,7 +200,8 @@ export function parseJsonMap(payload, { includePixels = false } = {}) {
       pixelCount: s.pixelCount,
       bbox: { minX: s.minX, minY: s.minY, maxX: s.maxX, maxY: s.maxY },
       roomName: names.get(segmentId) || null,
-      named: true,
+      // Like the Roborock maps: the floor of no room is neither drawn nor counted.
+      named: segmentId !== FLOOR_SEGMENT_ID,
     }))
     .sort((a, b) => a.segmentId - b.segmentId);
 

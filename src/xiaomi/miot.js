@@ -19,6 +19,9 @@
 
 import { CONSUMABLE_LIFETIME, ROBOROCK_METHOD } from '../constants.js';
 
+// Roborock state code of an error: a MIoT fault is reported as this state.
+const ROBOROCK_ERROR_STATE = 12;
+
 /**
  * The MIoT profiles, by model.
  *
@@ -26,6 +29,8 @@ import { CONSUMABLE_LIFETIME, ROBOROCK_METHOD } from '../constants.js';
  * - `areaUnitMm2`: the size, in mm², of one unit of the cleaned area (the spec
  *   does not say it: it is read on the robot against the app);
  * - `states`: MIoT status value -> Roborock state code;
+ * - `errors` (optional): MIoT fault code -> label, once the codes of the model
+ *   are known; a fault without a label is reported as `Erreur <code>`;
  * - `fanPowers`: MIoT suction level value -> Roborock fan power;
  * - `consumables`: the (siid, piid) of the remaining-life percentages, by
  *   get_consumable field;
@@ -137,6 +142,13 @@ export function statusFromProperties(profile, results) {
   }
   if (values.error_code !== undefined) {
     status.error_code = values.error_code;
+    // The MIoT status has no error value: a fault is the only sign of one. Its
+    // codes are not the Roborock ones, so the label never comes from that table.
+    if (values.error_code !== 0) {
+      status.state = ROBOROCK_ERROR_STATE;
+      status.error_label =
+        (profile.errors && profile.errors[values.error_code]) || `Erreur ${values.error_code}`;
+    }
   }
   if (values.clean_area !== undefined) {
     status.clean_area = values.clean_area * profile.areaUnitMm2; // mm², like Roborock

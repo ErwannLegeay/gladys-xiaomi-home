@@ -95,7 +95,7 @@ test('the JSON map becomes the structure the renderer reads', () => {
       named,
     })),
     [
-      { segmentId: 1, pixelCount: 1, roomName: null, named: true }, // floor, no room
+      { segmentId: 1, pixelCount: 1, roomName: null, named: false }, // floor, no room
       { segmentId: 3, pixelCount: 3, roomName: 'Salon', named: true },
       { segmentId: 4, pixelCount: 4, roomName: 'Cuisine', named: true }, // via room_id 12
     ],
